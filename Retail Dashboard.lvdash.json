@@ -1,0 +1,486 @@
+{
+  "datasets": [
+    {
+      "name": "2c52db08",
+      "displayName": "customers",
+      "config": {
+        "version": "1.1",
+        "source": "databricks_simulated_retail_customer_data.v01.customers",
+        "dimensions": [
+          {
+            "name": "customer_id",
+            "expr": "source.customer_id",
+            "displayName": "Customer Id"
+          },
+          {
+            "name": "tax_id",
+            "expr": "source.tax_id",
+            "displayName": "Tax Id"
+          },
+          {
+            "name": "tax_code",
+            "expr": "source.tax_code",
+            "displayName": "Tax Code"
+          },
+          {
+            "name": "customer_name",
+            "expr": "source.customer_name",
+            "displayName": "Customer Name"
+          },
+          {
+            "name": "state",
+            "expr": "source.state",
+            "displayName": "State"
+          },
+          {
+            "name": "city",
+            "expr": "source.city",
+            "displayName": "City"
+          },
+          {
+            "name": "postcode",
+            "expr": "source.postcode",
+            "displayName": "Postcode"
+          },
+          {
+            "name": "street",
+            "expr": "source.street",
+            "displayName": "Street"
+          },
+          {
+            "name": "number",
+            "expr": "source.number",
+            "displayName": "Number"
+          },
+          {
+            "name": "unit",
+            "expr": "source.unit",
+            "displayName": "Unit"
+          },
+          {
+            "name": "region",
+            "expr": "source.region",
+            "displayName": "Region"
+          },
+          {
+            "name": "district",
+            "expr": "source.district",
+            "displayName": "District"
+          },
+          {
+            "name": "lon",
+            "expr": "source.lon",
+            "displayName": "Lon"
+          },
+          {
+            "name": "lat",
+            "expr": "source.lat",
+            "displayName": "Lat"
+          },
+          {
+            "name": "ship_to_address",
+            "expr": "source.ship_to_address",
+            "displayName": "Ship To Address"
+          },
+          {
+            "name": "valid_from",
+            "expr": "source.valid_from",
+            "displayName": "Valid From"
+          },
+          {
+            "name": "valid_to",
+            "expr": "source.valid_to",
+            "displayName": "Valid To"
+          },
+          {
+            "name": "units_purchased",
+            "expr": "source.units_purchased",
+            "displayName": "Units Purchased"
+          },
+          {
+            "name": "loyalty_segment",
+            "expr": "source.loyalty_segment",
+            "displayName": "Loyalty Segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "100e9f0a",
+      "displayName": "sales_orders",
+      "config": {
+        "version": "1.1",
+        "source": "databricks_simulated_retail_customer_data.v01.sales_orders",
+        "dimensions": [
+          {
+            "name": "clicked_items",
+            "expr": "source.clicked_items",
+            "displayName": "Clicked Items"
+          },
+          {
+            "name": "customer_id",
+            "expr": "source.customer_id",
+            "displayName": "Customer Id"
+          },
+          {
+            "name": "customer_name",
+            "expr": "source.customer_name",
+            "displayName": "Customer Name"
+          },
+          {
+            "name": "number_of_line_items",
+            "expr": "source.number_of_line_items",
+            "displayName": "Number Of Line Items"
+          },
+          {
+            "name": "order_datetime",
+            "expr": "source.order_datetime",
+            "displayName": "Order Datetime"
+          },
+          {
+            "name": "order_number",
+            "expr": "source.order_number",
+            "displayName": "Order Number"
+          },
+          {
+            "name": "ordered_products",
+            "expr": "source.ordered_products",
+            "displayName": "Ordered Products"
+          },
+          {
+            "name": "promo_info",
+            "expr": "source.promo_info",
+            "displayName": "Promo Info"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "8805adcb",
+      "displayName": "sales",
+      "config": {
+        "version": "1.1",
+        "source": "databricks_simulated_retail_customer_data.v01.sales",
+        "dimensions": [
+          {
+            "name": "customer_id",
+            "expr": "source.customer_id",
+            "displayName": "Customer Id"
+          },
+          {
+            "name": "customer_name",
+            "expr": "source.customer_name",
+            "displayName": "Customer Name"
+          },
+          {
+            "name": "product_name",
+            "expr": "source.product_name",
+            "displayName": "Product Name"
+          },
+          {
+            "name": "order_date",
+            "expr": "source.order_date",
+            "displayName": "Order Date"
+          },
+          {
+            "name": "product_category",
+            "expr": "source.product_category",
+            "displayName": "Product Category"
+          },
+          {
+            "name": "product",
+            "expr": "source.product",
+            "displayName": "Product"
+          },
+          {
+            "name": "total_price",
+            "expr": "source.total_price",
+            "displayName": "Total Price"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "6a01c4f2",
+      "displayName": "love",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.default.love",
+        "dimensions": [
+          {
+            "name": "customer_id",
+            "expr": "source.customer_id",
+            "displayName": "Customer Id"
+          },
+          {
+            "name": "tax_id",
+            "expr": "source.tax_id",
+            "displayName": "Tax Id"
+          },
+          {
+            "name": "tax_code",
+            "expr": "source.tax_code",
+            "displayName": "Tax Code"
+          },
+          {
+            "name": "customer_name",
+            "expr": "source.customer_name",
+            "displayName": "Customer Name"
+          },
+          {
+            "name": "state",
+            "expr": "source.state",
+            "displayName": "State"
+          },
+          {
+            "name": "city",
+            "expr": "source.city",
+            "displayName": "City"
+          },
+          {
+            "name": "postcode",
+            "expr": "source.postcode",
+            "displayName": "Postcode"
+          },
+          {
+            "name": "street",
+            "expr": "source.street",
+            "displayName": "Street"
+          },
+          {
+            "name": "number",
+            "expr": "source.number",
+            "displayName": "Number"
+          },
+          {
+            "name": "unit",
+            "expr": "source.unit",
+            "displayName": "Unit"
+          },
+          {
+            "name": "region",
+            "expr": "source.region",
+            "displayName": "Region"
+          },
+          {
+            "name": "district",
+            "expr": "source.district",
+            "displayName": "District"
+          },
+          {
+            "name": "lon",
+            "expr": "source.lon",
+            "displayName": "Lon"
+          },
+          {
+            "name": "lat",
+            "expr": "source.lat",
+            "displayName": "Lat"
+          },
+          {
+            "name": "ship_to_address",
+            "expr": "source.ship_to_address",
+            "displayName": "Ship To Address"
+          },
+          {
+            "name": "valid_from",
+            "expr": "source.valid_from",
+            "displayName": "Valid From"
+          },
+          {
+            "name": "valid_to",
+            "expr": "source.valid_to",
+            "displayName": "Valid To"
+          },
+          {
+            "name": "units_purchased",
+            "expr": "source.units_purchased",
+            "displayName": "Units Purchased"
+          },
+          {
+            "name": "loyalty_segment",
+            "expr": "source.loyalty_segment",
+            "displayName": "Loyalty Segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "77bc794d",
+      "displayName": "Khan",
+      "config": {
+        "source": "workspace.default.love",
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ],
+        "version": "1.1",
+        "dimensions": [
+          {
+            "name": "customer_id",
+            "expr": "source.customer_id",
+            "displayName": "Customer Id"
+          },
+          {
+            "name": "tax_id",
+            "expr": "source.tax_id",
+            "displayName": "Tax Id"
+          },
+          {
+            "name": "tax_code",
+            "expr": "source.tax_code",
+            "displayName": "Tax Code"
+          },
+          {
+            "name": "customer_name",
+            "expr": "source.customer_name",
+            "displayName": "Customer Name"
+          },
+          {
+            "name": "state",
+            "expr": "source.state",
+            "displayName": "State"
+          },
+          {
+            "name": "city",
+            "expr": "source.city",
+            "displayName": "City"
+          },
+          {
+            "name": "postcode",
+            "expr": "source.postcode",
+            "displayName": "Postcode"
+          },
+          {
+            "name": "street",
+            "expr": "source.street",
+            "displayName": "Street"
+          },
+          {
+            "name": "number",
+            "expr": "source.number",
+            "displayName": "Number"
+          },
+          {
+            "name": "unit",
+            "expr": "source.unit",
+            "displayName": "Unit"
+          },
+          {
+            "name": "region",
+            "expr": "source.region",
+            "displayName": "Region"
+          },
+          {
+            "name": "district",
+            "expr": "source.district",
+            "displayName": "District"
+          },
+          {
+            "name": "lon",
+            "expr": "source.lon",
+            "displayName": "Lon"
+          },
+          {
+            "name": "lat",
+            "expr": "source.lat",
+            "displayName": "Lat"
+          },
+          {
+            "name": "ship_to_address",
+            "expr": "source.ship_to_address",
+            "displayName": "Ship To Address"
+          },
+          {
+            "name": "valid_from",
+            "expr": "source.valid_from",
+            "displayName": "Valid From"
+          },
+          {
+            "name": "valid_to",
+            "expr": "source.valid_to",
+            "displayName": "Valid To"
+          },
+          {
+            "name": "units_purchased",
+            "expr": "source.units_purchased",
+            "displayName": "Units Purchased"
+          },
+          {
+            "name": "loyalty_segment",
+            "expr": "source.loyalty_segment",
+            "displayName": "Loyalty Segment"
+          },
+          {
+            "name": "ordered_products",
+            "expr": "sales_orders.ordered_products"
+          },
+          {
+            "name": "order_number",
+            "expr": "sales_orders.order_number"
+          },
+          {
+            "name": "clicked_items",
+            "expr": "sales_orders.clicked_items"
+          }
+        ],
+        "joins": [
+          {
+            "name": "sales_orders",
+            "source": "databricks_simulated_retail_customer_data.v01.sales_orders",
+            "on": "source.customer_id = sales_orders.customer_id AND source.customer_name = sales_orders.customer_name"
+          }
+        ]
+      }
+    }
+  ],
+  "pages": [
+    {
+      "name": "1b17bcf5",
+      "displayName": "Untitled page",
+      "pageType": "PAGE_TYPE_CANVAS"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

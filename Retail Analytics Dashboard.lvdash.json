@@ -1,0 +1,487 @@
+{
+  "datasets": [
+    {
+      "name": "retail_sales_metrics",
+      "displayName": "Retail Sales Metrics",
+      "config": {
+        "version": "1.1",
+        "source": "databricks_simulated_retail_customer_data.v01.sales",
+        "dimensions": [
+          {
+            "name": "order_date",
+            "expr": "order_date"
+          },
+          {
+            "name": "product_category",
+            "expr": "product_category"
+          },
+          {
+            "name": "customer_id",
+            "expr": "customer_id"
+          },
+          {
+            "name": "customer_name",
+            "expr": "customer_name"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_revenue",
+            "expr": "SUM(total_price)",
+            "displayName": "Total Revenue"
+          },
+          {
+            "name": "total_orders",
+            "expr": "COUNT(*)",
+            "displayName": "Total Orders"
+          },
+          {
+            "name": "unique_customers",
+            "expr": "COUNT(DISTINCT customer_id)",
+            "displayName": "Unique Customers"
+          },
+          {
+            "name": "avg_order_value",
+            "expr": "MEASURE(total_revenue) / MEASURE(total_orders)",
+            "displayName": "Average Order Value"
+          }
+        ]
+      }
+    },
+    {
+      "name": "regional_sales",
+      "displayName": "Regional Sales",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT \n  s.order_date,\n  s.product_category,\n  s.customer_id,\n  s.customer_name,\n  s.total_price,\n  c.region,\n  c.state,\n  c.city\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\n",
+        "dimensions": [
+          {
+            "name": "order_date",
+            "expr": "order_date"
+          },
+          {
+            "name": "region",
+            "expr": "region"
+          },
+          {
+            "name": "state",
+            "expr": "state"
+          },
+          {
+            "name": "customer_id",
+            "expr": "customer_id"
+          },
+          {
+            "name": "customer_name",
+            "expr": "customer_name"
+          }
+        ],
+        "measures": [
+          {
+            "name": "revenue",
+            "expr": "SUM(total_price)",
+            "displayName": "Revenue"
+          },
+          {
+            "name": "order_count",
+            "expr": "COUNT(*)",
+            "displayName": "Orders"
+          }
+        ]
+      }
+    }
+  ],
+  "pages": [
+    {
+      "name": "a7a10a36",
+      "displayName": "Page 1",
+      "layout": [
+        {
+          "widget": {
+            "name": "total_revenue_counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "retail_sales_metrics",
+                  "fields": [
+                    {
+                      "name": "measure(total_revenue)",
+                      "expression": "MEASURE(`total_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Total Revenue"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(total_revenue)",
+                  "displayName": "Total Revenue"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "total_orders_counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "retail_sales_metrics",
+                  "fields": [
+                    {
+                      "name": "measure(total_orders)",
+                      "expression": "MEASURE(`total_orders`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Total Orders"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(total_orders)",
+                  "displayName": "Total Orders"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "unique_customers_counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "retail_sales_metrics",
+                  "fields": [
+                    {
+                      "name": "measure(unique_customers)",
+                      "expression": "MEASURE(`unique_customers`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Unique Customers"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(unique_customers)",
+                  "displayName": "Unique Customers"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "revenue_over_time",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "retail_sales_metrics",
+                  "fields": [
+                    {
+                      "name": "monthly(order_date)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `order_date`)"
+                    },
+                    {
+                      "name": "measure(total_revenue)",
+                      "expression": "MEASURE(`total_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue Over Time"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(order_date)",
+                  "displayName": "Order Date",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_revenue)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "displayName": "Total Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_by_category",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "retail_sales_metrics",
+                  "fields": [
+                    {
+                      "name": "product_category",
+                      "expression": "`product_category`"
+                    },
+                    {
+                      "name": "measure(total_revenue)",
+                      "expression": "MEASURE(`total_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Sales by Product Category"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "product_category",
+                  "displayName": "Product Category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_revenue)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "displayName": "Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_by_region",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "regional_sales",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "measure(revenue)",
+                      "expression": "MEASURE(`revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Sales by Region"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "region",
+                  "displayName": "Region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(revenue)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "displayName": "Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 9,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "top_customers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "retail_sales_metrics",
+                  "fields": [
+                    {
+                      "name": "customer_name",
+                      "expression": "`customer_name`"
+                    },
+                    {
+                      "name": "measure(total_orders)",
+                      "expression": "MEASURE(`total_orders`)"
+                    },
+                    {
+                      "name": "measure(total_revenue)",
+                      "expression": "MEASURE(`total_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Customers"
+              },
+              "rowsPerPage": 10,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "customer_name",
+                    "displayName": "Customer Name"
+                  },
+                  {
+                    "fieldName": "measure(total_orders)",
+                    "displayName": "Total Orders"
+                  },
+                  {
+                    "fieldName": "measure(total_revenue)",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "exact",
+                        "places": 2
+                      }
+                    },
+                    "displayName": "Total Revenue"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
