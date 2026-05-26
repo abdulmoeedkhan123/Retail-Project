@@ -89,6 +89,557 @@
           }
         ]
       }
+    },
+    {
+      "name": "sales_by_loyalty_segment",
+      "displayName": "Sales by loyalty segment",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT\n  product_category,\n  loyalty_segment,\n  total_price\nFROM\n  databricks_simulated_retail_customer_data.v01.sales\n  JOIN databricks_simulated_retail_customer_data.v01.customers\n  ON sales.customer_id = customers.customer_id\n",
+        "dimensions": [
+          {
+            "name": "product_category",
+            "expr": "product_category"
+          },
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_price",
+            "expr": "SUM(total_price)",
+            "displayName": "Total Price"
+          }
+        ]
+      }
+    },
+    {
+      "name": "sales_and_orders_by_day",
+      "displayName": "Sales and orders by day",
+      "config": {
+        "version": "1.1",
+        "source": "WITH sales_data AS (\n  SELECT\n    date_format(order_date, \"dd\") AS day,\n    SUM(total_price) AS total_sales\n  FROM databricks_simulated_retail_customer_data.v01.sales\n  GROUP BY day\n), orders_data AS (\n  SELECT\n    CASE \n      WHEN try_cast(sales_orders.order_datetime AS BIGINT) IS NOT NULL \n      THEN DAY(FROM_UNIXTIME(sales_orders.order_datetime))\n      ELSE NULL \n    END as day,\n    COUNT(order_number) AS total_orders\n  FROM databricks_simulated_retail_customer_data.v01.sales_orders\n  GROUP BY day\n) SELECT\n  cast(s.day as INT) as day,\n  s.total_sales,\n  o.total_orders\nFROM sales_data s JOIN orders_data o ON s.day = o.day ORDER BY s.day\n",
+        "dimensions": [
+          {
+            "name": "day",
+            "expr": "day"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_sales",
+            "expr": "SUM(total_sales)",
+            "displayName": "Total Sales"
+          },
+          {
+            "name": "total_orders",
+            "expr": "SUM(total_orders)",
+            "displayName": "Total Orders"
+          }
+        ]
+      }
+    },
+    {
+      "name": "order_frequency_distribution",
+      "displayName": "Order Frequency Distribution",
+      "config": {
+        "version": "1.1",
+        "source": "WITH customer_orders AS (\n  SELECT \n    customer_id,\n    COUNT(DISTINCT order_date) as order_frequency\n  FROM databricks_simulated_retail_customer_data.v01.sales\n  GROUP BY customer_id\n) SELECT \n  order_frequency,\n  COUNT(*) as customer_count\nFROM customer_orders GROUP BY order_frequency\n",
+        "dimensions": [
+          {
+            "name": "order_frequency",
+            "expr": "order_frequency"
+          }
+        ],
+        "measures": [
+          {
+            "name": "customer_count",
+            "expr": "SUM(customer_count)"
+          },
+          {
+            "name": "percentage",
+            "expr": "MEASURE(customer_count) / SUM(SUM(customer_count)) OVER () * 100"
+          }
+        ]
+      }
+    },
+    {
+      "name": "revenue_by_segment",
+      "displayName": "Revenue by Customer Segment",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT \n  c.loyalty_segment,\n  s.customer_id,\n  SUM(s.total_price) as total_revenue\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\nGROUP BY c.loyalty_segment, s.customer_id\n",
+        "dimensions": [
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "customer_count",
+            "expr": "COUNT(DISTINCT customer_id)"
+          },
+          {
+            "name": "total_revenue",
+            "expr": "SUM(total_revenue)"
+          },
+          {
+            "name": "revenue_percentage",
+            "expr": "MEASURE(total_revenue) / SUM(SUM(total_revenue)) OVER () * 100"
+          }
+        ]
+      }
+    },
+    {
+      "name": "customer_lifetime_value",
+      "displayName": "Customer Lifetime Value",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT \n  s.customer_id,\n  c.customer_name,\n  c.loyalty_segment,\n  c.region,\n  COUNT(DISTINCT s.order_date) as total_orders,\n  SUM(s.total_price) as lifetime_value,\n  AVG(s.total_price) as avg_order_value,\n  DATEDIFF(MAX(s.order_date), MIN(s.order_date)) as tenure_days,\n  CASE \n    WHEN SUM(s.total_price) >= 200000 THEN 'High Value'\n    WHEN SUM(s.total_price) >= 100000 THEN 'Medium Value'\n    ELSE 'Low Value'\n  END as customer_value_tier\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\nGROUP BY s.customer_id, c.customer_name, c.loyalty_segment, c.region\n",
+        "dimensions": [
+          {
+            "name": "customer_id",
+            "expr": "customer_id"
+          },
+          {
+            "name": "customer_name",
+            "expr": "customer_name"
+          },
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          },
+          {
+            "name": "region",
+            "expr": "region"
+          },
+          {
+            "name": "customer_value_tier",
+            "expr": "customer_value_tier"
+          },
+          {
+            "name": "tenure_days",
+            "expr": "tenure_days"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_orders",
+            "expr": "SUM(total_orders)"
+          },
+          {
+            "name": "lifetime_value",
+            "expr": "SUM(lifetime_value)"
+          },
+          {
+            "name": "avg_order_value",
+            "expr": "AVG(avg_order_value)"
+          },
+          {
+            "name": "revenue_per_order",
+            "expr": "MEASURE(lifetime_value) / MEASURE(total_orders)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "customer_revenue_trend",
+      "displayName": "Customer Revenue Trend Over Time",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT \n  DATE_TRUNC('MONTH', s.order_date) as month,\n  c.loyalty_segment,\n  s.customer_id,\n  SUM(s.total_price) as monthly_revenue\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\nGROUP BY DATE_TRUNC('MONTH', s.order_date), c.loyalty_segment, s.customer_id\n",
+        "dimensions": [
+          {
+            "name": "month",
+            "expr": "month"
+          },
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "active_customers",
+            "expr": "COUNT(DISTINCT customer_id)"
+          },
+          {
+            "name": "monthly_revenue",
+            "expr": "SUM(monthly_revenue)"
+          },
+          {
+            "name": "cumulative_revenue",
+            "expr": "SUM(SUM(monthly_revenue)) OVER (PARTITION BY loyalty_segment ORDER BY month)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "revenue_concentration",
+      "displayName": "Revenue Concentration",
+      "config": {
+        "version": "1.1",
+        "source": "WITH customer_revenue AS (\n  SELECT \n    s.customer_id,\n    c.customer_name,\n    SUM(s.total_price) as total_revenue\n  FROM databricks_simulated_retail_customer_data.v01.sales s\n  JOIN databricks_simulated_retail_customer_data.v01.customers c \n    ON s.customer_id = c.customer_id\n  GROUP BY s.customer_id, c.customer_name\n), ranked_customers AS (\n  SELECT \n    customer_id,\n    customer_name,\n    total_revenue,\n    ROW_NUMBER() OVER (ORDER BY total_revenue DESC) as customer_rank,\n    SUM(total_revenue) OVER (ORDER BY total_revenue DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as cumulative_revenue,\n    SUM(total_revenue) OVER () as total_revenue_all\n  FROM customer_revenue\n) SELECT \n  customer_rank,\n  customer_id,\n  customer_name,\n  total_revenue,\n  cumulative_revenue,\n  cumulative_revenue / total_revenue_all * 100 as cumulative_pct,\n  CASE \n    WHEN customer_rank <= CEIL(COUNT(*) OVER () * 0.2) THEN 'Top 20%'\n    WHEN customer_rank <= CEIL(COUNT(*) OVER () * 0.5) THEN 'Middle 30%'\n    ELSE 'Bottom 50%'\n  END as customer_tier\nFROM ranked_customers\n",
+        "dimensions": [
+          {
+            "name": "customer_rank",
+            "expr": "customer_rank"
+          },
+          {
+            "name": "customer_id",
+            "expr": "customer_id"
+          },
+          {
+            "name": "customer_name",
+            "expr": "customer_name"
+          },
+          {
+            "name": "customer_tier",
+            "expr": "customer_tier"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_revenue",
+            "expr": "SUM(total_revenue)"
+          },
+          {
+            "name": "cumulative_revenue",
+            "expr": "MAX(cumulative_revenue)"
+          },
+          {
+            "name": "cumulative_pct",
+            "expr": "MAX(cumulative_pct)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "avg_order_value_by_segment",
+      "displayName": "Avg Order Value by Segment",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT \n  c.loyalty_segment,\n  c.region,\n  s.order_date,\n  s.total_price\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\n",
+        "dimensions": [
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          },
+          {
+            "name": "region",
+            "expr": "region"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_orders",
+            "expr": "COUNT(*)"
+          },
+          {
+            "name": "avg_order_value",
+            "expr": "AVG(total_price)"
+          },
+          {
+            "name": "std_dev_order_value",
+            "expr": "STDDEV(total_price)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "order_size_distribution",
+      "displayName": "Order Size Distribution",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT \n  c.loyalty_segment,\n  s.order_date,\n  s.total_price,\n  CASE \n    WHEN s.total_price < 5000 THEN 'Under $5K'\n    WHEN s.total_price < 10000 THEN '$5K-$10K'\n    WHEN s.total_price < 20000 THEN '$10K-$20K'\n    WHEN s.total_price < 50000 THEN '$20K-$50K'\n    ELSE 'Over $50K'\n  END as order_size_bucket\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\n",
+        "dimensions": [
+          {
+            "name": "order_size_bucket",
+            "expr": "order_size_bucket"
+          },
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "order_count",
+            "expr": "COUNT(*)"
+          },
+          {
+            "name": "percentage",
+            "expr": "MEASURE(order_count) / SUM(COUNT(*)) OVER () * 100"
+          }
+        ]
+      }
+    },
+    {
+      "name": "repeat_customer_metrics",
+      "displayName": "Repeat Customer Metrics",
+      "config": {
+        "version": "1.1",
+        "source": "WITH customer_orders AS (\n  SELECT \n    s.customer_id,\n    c.loyalty_segment,\n    COUNT(DISTINCT s.order_date) as order_count\n  FROM databricks_simulated_retail_customer_data.v01.sales s\n  JOIN databricks_simulated_retail_customer_data.v01.customers c \n    ON s.customer_id = c.customer_id\n  GROUP BY s.customer_id, c.loyalty_segment\n) SELECT \n  loyalty_segment,\n  customer_id,\n  order_count,\n  CASE WHEN order_count > 1 THEN 1 ELSE 0 END as is_repeat_customer\nFROM customer_orders\n",
+        "dimensions": [
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "repeat_customers",
+            "expr": "SUM(is_repeat_customer)"
+          },
+          {
+            "name": "total_customers",
+            "expr": "COUNT(DISTINCT customer_id)"
+          },
+          {
+            "name": "repeat_rate",
+            "expr": "MEASURE(repeat_customers) / MEASURE(total_customers) * 100"
+          },
+          {
+            "name": "avg_orders_per_customer",
+            "expr": "AVG(order_count)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "avg_revenue_by_segment",
+      "displayName": "Avg Revenue by Loyalty Segment",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT \n  c.loyalty_segment,\n  s.customer_id,\n  SUM(s.total_price) as customer_revenue\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\nGROUP BY c.loyalty_segment, s.customer_id\n",
+        "dimensions": [
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_customers",
+            "expr": "COUNT(DISTINCT customer_id)"
+          },
+          {
+            "name": "avg_revenue_per_customer",
+            "expr": "AVG(customer_revenue)"
+          },
+          {
+            "name": "highest_customer_value",
+            "expr": "MAX(customer_revenue)"
+          },
+          {
+            "name": "lowest_customer_value",
+            "expr": "MIN(customer_revenue)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "customer_order_patterns",
+      "displayName": "Customer Order Patterns",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT \n  DAYOFWEEK(s.order_date) as day_of_week,\n  DAY(s.order_date) as day_of_month,\n  c.loyalty_segment,\n  s.order_date,\n  s.total_price\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\n",
+        "dimensions": [
+          {
+            "name": "day_of_week",
+            "expr": "day_of_week"
+          },
+          {
+            "name": "day_of_month",
+            "expr": "day_of_month"
+          },
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "order_count",
+            "expr": "COUNT(*)"
+          },
+          {
+            "name": "daily_revenue",
+            "expr": "SUM(total_price)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "customer_purchase_patterns",
+      "displayName": "Customer Purchase Patterns",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT \n  s.customer_id,\n  c.customer_name,\n  c.loyalty_segment,\n  COUNT(DISTINCT s.product_category) as unique_categories_purchased,\n  COUNT(DISTINCT s.product_name) as unique_products,\n  SUM(s.total_price) as total_spent\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\nGROUP BY s.customer_id, c.customer_name, c.loyalty_segment\n",
+        "dimensions": [
+          {
+            "name": "customer_id",
+            "expr": "customer_id"
+          },
+          {
+            "name": "customer_name",
+            "expr": "customer_name"
+          },
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          }
+        ],
+        "measures": [
+          {
+            "name": "unique_categories_purchased",
+            "expr": "SUM(unique_categories_purchased)"
+          },
+          {
+            "name": "unique_products",
+            "expr": "SUM(unique_products)"
+          },
+          {
+            "name": "total_spent",
+            "expr": "SUM(total_spent)"
+          },
+          {
+            "name": "avg_categories_per_customer",
+            "expr": "AVG(unique_categories_purchased)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "product_category_preferences",
+      "displayName": "Product Category Preferences",
+      "config": {
+        "version": "1.1",
+        "source": "WITH segment_totals AS (\n  SELECT \n    c.loyalty_segment,\n    SUM(s.total_price) as segment_total_revenue\n  FROM databricks_simulated_retail_customer_data.v01.sales s\n  JOIN databricks_simulated_retail_customer_data.v01.customers c \n    ON s.customer_id = c.customer_id\n  GROUP BY c.loyalty_segment\n) SELECT \n  c.loyalty_segment,\n  s.product_category,\n  COUNT(*) as purchase_count,\n  SUM(s.total_price) as category_revenue,\n  st.segment_total_revenue,\n  SUM(s.total_price) / st.segment_total_revenue * 100 as pct_of_segment_revenue\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\nJOIN segment_totals st ON c.loyalty_segment = st.loyalty_segment GROUP BY c.loyalty_segment, s.product_category, st.segment_total_revenue\n",
+        "dimensions": [
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          },
+          {
+            "name": "product_category",
+            "expr": "product_category"
+          }
+        ],
+        "measures": [
+          {
+            "name": "purchase_count",
+            "expr": "SUM(purchase_count)"
+          },
+          {
+            "name": "category_revenue",
+            "expr": "SUM(category_revenue)"
+          },
+          {
+            "name": "pct_of_segment_revenue",
+            "expr": "AVG(pct_of_segment_revenue)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "cross_sell_opportunities",
+      "displayName": "Cross-Sell Opportunities",
+      "config": {
+        "version": "1.1",
+        "source": "WITH product_pairs AS (\n  SELECT \n    s1.product_category as product_a,\n    s2.product_category as product_b,\n    s1.customer_id\n  FROM databricks_simulated_retail_customer_data.v01.sales s1\n  JOIN databricks_simulated_retail_customer_data.v01.sales s2 \n    ON s1.customer_id = s2.customer_id \n    AND s1.product_category < s2.product_category\n  GROUP BY s1.product_category, s2.product_category, s1.customer_id\n) SELECT \n  product_a,\n  product_b,\n  COUNT(DISTINCT customer_id) as customers_bought_both,\n  COUNT(DISTINCT customer_id) * 1.0 / (SELECT COUNT(DISTINCT customer_id) FROM databricks_simulated_retail_customer_data.v01.sales) as affinity_score\nFROM product_pairs GROUP BY product_a, product_b\n",
+        "dimensions": [
+          {
+            "name": "product_a",
+            "expr": "product_a"
+          },
+          {
+            "name": "product_b",
+            "expr": "product_b"
+          }
+        ],
+        "measures": [
+          {
+            "name": "customers_bought_both",
+            "expr": "SUM(customers_bought_both)"
+          },
+          {
+            "name": "affinity_score",
+            "expr": "AVG(affinity_score)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "category_mix_by_customer",
+      "displayName": "Category Mix by Customer",
+      "config": {
+        "version": "1.1",
+        "source": "WITH customer_totals AS (\n  SELECT \n    customer_id,\n    SUM(total_price) as customer_total_spend\n  FROM databricks_simulated_retail_customer_data.v01.sales\n  GROUP BY customer_id\n) SELECT \n  s.customer_id,\n  c.customer_name,\n  s.product_category,\n  SUM(s.total_price) as category_spend,\n  ct.customer_total_spend,\n  SUM(s.total_price) / ct.customer_total_spend * 100 as pct_of_customer_spend\nFROM databricks_simulated_retail_customer_data.v01.sales s JOIN databricks_simulated_retail_customer_data.v01.customers c \n  ON s.customer_id = c.customer_id\nJOIN customer_totals ct ON s.customer_id = ct.customer_id GROUP BY s.customer_id, c.customer_name, s.product_category, ct.customer_total_spend\n",
+        "dimensions": [
+          {
+            "name": "customer_id",
+            "expr": "customer_id"
+          },
+          {
+            "name": "customer_name",
+            "expr": "customer_name"
+          },
+          {
+            "name": "product_category",
+            "expr": "product_category"
+          }
+        ],
+        "measures": [
+          {
+            "name": "category_spend",
+            "expr": "SUM(category_spend)"
+          },
+          {
+            "name": "pct_of_customer_spend",
+            "expr": "AVG(pct_of_customer_spend)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "top_products_by_segment",
+      "displayName": "Top Products by Segment",
+      "config": {
+        "version": "1.1",
+        "source": "WITH product_rankings AS (\n  SELECT \n    c.loyalty_segment,\n    s.product_category,\n    s.product_name,\n    COUNT(*) as purchase_count,\n    SUM(s.total_price) as revenue,\n    ROW_NUMBER() OVER (PARTITION BY c.loyalty_segment ORDER BY SUM(s.total_price) DESC) as product_rank\n  FROM databricks_simulated_retail_customer_data.v01.sales s\n  JOIN databricks_simulated_retail_customer_data.v01.customers c \n    ON s.customer_id = c.customer_id\n  GROUP BY c.loyalty_segment, s.product_category, s.product_name\n) SELECT \n  loyalty_segment,\n  product_category,\n  product_name,\n  purchase_count,\n  revenue,\n  product_rank\nFROM product_rankings WHERE product_rank <= 10\n",
+        "dimensions": [
+          {
+            "name": "loyalty_segment",
+            "expr": "loyalty_segment"
+          },
+          {
+            "name": "product_category",
+            "expr": "product_category"
+          },
+          {
+            "name": "product_name",
+            "expr": "product_name"
+          },
+          {
+            "name": "product_rank",
+            "expr": "product_rank"
+          }
+        ],
+        "measures": [
+          {
+            "name": "purchase_count",
+            "expr": "SUM(purchase_count)"
+          },
+          {
+            "name": "revenue",
+            "expr": "SUM(revenue)"
+          }
+        ]
+      }
     }
   ],
   "pages": [
@@ -469,6 +1020,1265 @@
           "position": {
             "x": 0,
             "y": 15,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "loyalty_segment_heatmap",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "sales_by_loyalty_segment",
+                  "fields": [
+                    {
+                      "name": "measure(total_price)",
+                      "expression": "MEASURE(`total_price`)"
+                    },
+                    {
+                      "name": "product_category",
+                      "expression": "`product_category`"
+                    },
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Sales by Loyalty Segment"
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "product_category",
+                  "displayName": "Product Category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "loyalty_segment",
+                  "displayName": "Loyalty Segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "measure(total_price)",
+                  "displayName": "Total Price",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 21,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_orders_dual_axis",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "sales_and_orders_by_day",
+                  "fields": [
+                    {
+                      "name": "day",
+                      "expression": "`day`"
+                    },
+                    {
+                      "name": "measure(total_sales)",
+                      "expression": "MEASURE(`total_sales`)"
+                    },
+                    {
+                      "name": "measure(total_orders)",
+                      "expression": "MEASURE(`total_orders`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Sales and Orders by Day"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "day",
+                  "displayName": "Day",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "measure(total_sales)",
+                        "displayName": "Total Sales"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "measure(total_orders)",
+                        "displayName": "Total Orders"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 27,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "revenue_to_customer",
+      "displayName": "Revenue to Customer",
+      "layout": [
+        {
+          "widget": {
+            "name": "customer_lifetime_value_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer_lifetime_value",
+                  "fields": [
+                    {
+                      "name": "customer_name",
+                      "expression": "`customer_name`"
+                    },
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    },
+                    {
+                      "name": "customer_value_tier",
+                      "expression": "`customer_value_tier`"
+                    },
+                    {
+                      "name": "measure(total_orders)",
+                      "expression": "MEASURE(`total_orders`)"
+                    },
+                    {
+                      "name": "measure(lifetime_value)",
+                      "expression": "MEASURE(`lifetime_value`)"
+                    },
+                    {
+                      "name": "measure(avg_order_value)",
+                      "expression": "MEASURE(`avg_order_value`)"
+                    },
+                    {
+                      "name": "tenure_days",
+                      "expression": "`tenure_days`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Customer Lifetime Value"
+              },
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "customer_name",
+                    "displayName": "Customer"
+                  },
+                  {
+                    "fieldName": "region",
+                    "displayName": "Region"
+                  },
+                  {
+                    "fieldName": "loyalty_segment",
+                    "displayName": "Loyalty Segment"
+                  },
+                  {
+                    "fieldName": "customer_value_tier",
+                    "displayName": "Value Tier"
+                  },
+                  {
+                    "fieldName": "measure(total_orders)",
+                    "displayName": "Total Orders"
+                  },
+                  {
+                    "fieldName": "measure(lifetime_value)",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "exact",
+                        "places": 0
+                      }
+                    },
+                    "displayName": "Lifetime Value"
+                  },
+                  {
+                    "fieldName": "measure(avg_order_value)",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "exact",
+                        "places": 0
+                      }
+                    },
+                    "displayName": "Avg Order Value"
+                  },
+                  {
+                    "fieldName": "tenure_days",
+                    "displayName": "Tenure (Days)"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "revenue_by_segment_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "revenue_by_segment",
+                  "fields": [
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    },
+                    {
+                      "name": "measure(total_revenue)",
+                      "expression": "MEASURE(`total_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue by Segment"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "loyalty_segment",
+                  "displayName": "Loyalty Segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_revenue)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "displayName": "Total Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "customer_revenue_trend_line",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer_revenue_trend",
+                  "fields": [
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    },
+                    {
+                      "name": "month",
+                      "expression": "`month`"
+                    },
+                    {
+                      "name": "measure(monthly_revenue)",
+                      "expression": "MEASURE(`monthly_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Customer Revenue Trend"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "month",
+                  "displayName": "Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(monthly_revenue)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "displayName": "Monthly Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "loyalty_segment",
+                  "displayName": "Loyalty Segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "avg_revenue_by_segment_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "avg_revenue_by_segment",
+                  "fields": [
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    },
+                    {
+                      "name": "measure(avg_revenue_per_customer)",
+                      "expression": "MEASURE(`avg_revenue_per_customer`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Revenue by Segment"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "loyalty_segment",
+                  "displayName": "Loyalty Segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(avg_revenue_per_customer)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "displayName": "Avg Revenue per Customer",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "revenue_concentration_line",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "revenue_concentration",
+                  "fields": [
+                    {
+                      "name": "customer_rank",
+                      "expression": "`customer_rank`"
+                    },
+                    {
+                      "name": "measure(cumulative_pct)",
+                      "expression": "MEASURE(`cumulative_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue Concentration"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "customer_rank",
+                  "displayName": "Customer Rank",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(cumulative_pct)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "Cumulative Revenue %",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "order_to_customer",
+      "displayName": "Order to Customer",
+      "layout": [
+        {
+          "widget": {
+            "name": "order_frequency_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "order_frequency_distribution",
+                  "fields": [
+                    {
+                      "name": "order_frequency",
+                      "expression": "`order_frequency`"
+                    },
+                    {
+                      "name": "measure(customer_count)",
+                      "expression": "MEASURE(`customer_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Order Frequency Distribution"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "order_frequency",
+                  "displayName": "Orders per Customer",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(customer_count)",
+                  "displayName": "Number of Customers",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "avg_order_value_segment_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "avg_order_value_by_segment",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    },
+                    {
+                      "name": "measure(avg_order_value)",
+                      "expression": "MEASURE(`avg_order_value`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Order Value by Segment & Region"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "loyalty_segment",
+                  "displayName": "Loyalty Segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(avg_order_value)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "displayName": "Avg Order Value",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "region",
+                  "displayName": "Region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "order_patterns_heatmap",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer_order_patterns",
+                  "fields": [
+                    {
+                      "name": "measure(order_count)",
+                      "expression": "MEASURE(`order_count`)"
+                    },
+                    {
+                      "name": "day_of_week",
+                      "expression": "`day_of_week`"
+                    },
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Customer Order Patterns"
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "day_of_week",
+                  "displayName": "Day of Week",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "loyalty_segment",
+                  "displayName": "Loyalty Segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "measure(order_count)",
+                  "displayName": "Order Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "repeat_customer_metrics_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "repeat_customer_metrics",
+                  "fields": [
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    },
+                    {
+                      "name": "measure(repeat_rate)",
+                      "expression": "MEASURE(`repeat_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Repeat Customer Metrics"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "loyalty_segment",
+                  "displayName": "Loyalty Segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(repeat_rate)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "Repeat Rate %",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "order_size_distribution_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "order_size_distribution",
+                  "fields": [
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    },
+                    {
+                      "name": "order_size_bucket",
+                      "expression": "`order_size_bucket`"
+                    },
+                    {
+                      "name": "measure(order_count)",
+                      "expression": "MEASURE(`order_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Order Size Distribution"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "order_size_bucket",
+                  "displayName": "Order Size",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(order_count)",
+                  "displayName": "Order Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "loyalty_segment",
+                  "displayName": "Loyalty Segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "sales_to_customer",
+      "displayName": "Sales to Customer",
+      "layout": [
+        {
+          "widget": {
+            "name": "top_products_segment_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_products_by_segment",
+                  "fields": [
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    },
+                    {
+                      "name": "product_rank",
+                      "expression": "`product_rank`"
+                    },
+                    {
+                      "name": "product_name",
+                      "expression": "`product_name`"
+                    },
+                    {
+                      "name": "product_category",
+                      "expression": "`product_category`"
+                    },
+                    {
+                      "name": "measure(purchase_count)",
+                      "expression": "MEASURE(`purchase_count`)"
+                    },
+                    {
+                      "name": "measure(revenue)",
+                      "expression": "MEASURE(`revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top Products by Segment"
+              },
+              "version": 2,
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "loyalty_segment",
+                    "displayName": "Loyalty Segment"
+                  },
+                  {
+                    "fieldName": "product_rank",
+                    "displayName": "Rank"
+                  },
+                  {
+                    "fieldName": "product_name",
+                    "displayName": "Product Name"
+                  },
+                  {
+                    "fieldName": "product_category",
+                    "displayName": "Category"
+                  },
+                  {
+                    "fieldName": "measure(purchase_count)",
+                    "displayName": "Purchases"
+                  },
+                  {
+                    "fieldName": "measure(revenue)",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "exact",
+                        "places": 0
+                      }
+                    },
+                    "displayName": "Revenue"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "category_preferences_heatmap",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "product_category_preferences",
+                  "fields": [
+                    {
+                      "name": "measure(pct_of_segment_revenue)",
+                      "expression": "MEASURE(`pct_of_segment_revenue`)"
+                    },
+                    {
+                      "name": "product_category",
+                      "expression": "`product_category`"
+                    },
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Product Category Preferences"
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "product_category",
+                  "displayName": "Product Category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "loyalty_segment",
+                  "displayName": "Loyalty Segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "measure(pct_of_segment_revenue)",
+                  "displayName": "% of Segment Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "purchase_patterns_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer_purchase_patterns",
+                  "fields": [
+                    {
+                      "name": "customer_name",
+                      "expression": "`customer_name`"
+                    },
+                    {
+                      "name": "loyalty_segment",
+                      "expression": "`loyalty_segment`"
+                    },
+                    {
+                      "name": "measure(unique_categories_purchased)",
+                      "expression": "MEASURE(`unique_categories_purchased`)"
+                    },
+                    {
+                      "name": "measure(unique_products)",
+                      "expression": "MEASURE(`unique_products`)"
+                    },
+                    {
+                      "name": "measure(total_spent)",
+                      "expression": "MEASURE(`total_spent`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Customer Purchase Patterns"
+              },
+              "version": 2,
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "customer_name",
+                    "displayName": "Customer"
+                  },
+                  {
+                    "fieldName": "loyalty_segment",
+                    "displayName": "Loyalty Segment"
+                  },
+                  {
+                    "fieldName": "measure(unique_categories_purchased)",
+                    "displayName": "Unique Categories"
+                  },
+                  {
+                    "fieldName": "measure(unique_products)",
+                    "displayName": "Unique Products"
+                  },
+                  {
+                    "fieldName": "measure(total_spent)",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "exact",
+                        "places": 0
+                      }
+                    },
+                    "displayName": "Total Spent"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "category_mix_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_mix_by_customer",
+                  "fields": [
+                    {
+                      "name": "customer_name",
+                      "expression": "`customer_name`"
+                    },
+                    {
+                      "name": "product_category",
+                      "expression": "`product_category`"
+                    },
+                    {
+                      "name": "measure(category_spend)",
+                      "expression": "MEASURE(`category_spend`)"
+                    },
+                    {
+                      "name": "measure(pct_of_customer_spend)",
+                      "expression": "MEASURE(`pct_of_customer_spend`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Category Mix by Customer"
+              },
+              "version": 2,
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "customer_name",
+                    "displayName": "Customer"
+                  },
+                  {
+                    "fieldName": "product_category",
+                    "displayName": "Category"
+                  },
+                  {
+                    "fieldName": "measure(category_spend)",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "exact",
+                        "places": 0
+                      }
+                    },
+                    "displayName": "Spend"
+                  },
+                  {
+                    "fieldName": "measure(pct_of_customer_spend)",
+                    "format": {
+                      "type": "number-percent",
+                      "decimalPlaces": {
+                        "type": "exact",
+                        "places": 1
+                      }
+                    },
+                    "displayName": "% of Customer Total"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "cross_sell_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cross_sell_opportunities",
+                  "fields": [
+                    {
+                      "name": "product_a",
+                      "expression": "`product_a`"
+                    },
+                    {
+                      "name": "product_b",
+                      "expression": "`product_b`"
+                    },
+                    {
+                      "name": "measure(customers_bought_both)",
+                      "expression": "MEASURE(`customers_bought_both`)"
+                    },
+                    {
+                      "name": "measure(affinity_score)",
+                      "expression": "MEASURE(`affinity_score`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Cross-Sell Opportunities"
+              },
+              "version": 2,
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "product_a",
+                    "displayName": "Product A"
+                  },
+                  {
+                    "fieldName": "product_b",
+                    "displayName": "Product B"
+                  },
+                  {
+                    "fieldName": "measure(customers_bought_both)",
+                    "displayName": "Customers Bought Both"
+                  },
+                  {
+                    "fieldName": "measure(affinity_score)",
+                    "format": {
+                      "type": "number-percent",
+                      "decimalPlaces": {
+                        "type": "exact",
+                        "places": 1
+                      }
+                    },
+                    "displayName": "Affinity Score"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 18,
             "width": 12,
             "height": 6
           }
